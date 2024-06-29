@@ -129,6 +129,9 @@ async def merge_videos(input_file, output_file):
 
 
 def compress_video_file(input_path, output_path, preset='ultrafast', crf=27):
+    """
+    Compress a video file using ffmpeg.
+    """
     command = [
         'ffmpeg',
         '-i', input_path,

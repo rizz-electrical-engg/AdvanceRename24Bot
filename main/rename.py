@@ -525,7 +525,7 @@ async def rename_file(bot, msg: Message):
         pass
 
     await sts.delete()
-
+"""
 #MultiTask Command 
 @Client.on_message(filters.private & filters.command("multitask"))
 async def multitask_command(bot, msg):
@@ -597,6 +597,98 @@ async def multitask_command(bot, msg):
         os.remove(downloaded)
         return
 
+    filesize = os.path.getsize(new_filename)
+    filesize_human = humanbytes(filesize)
+
+    await sts.edit("💠 Uploading cleaned file... ⚡")
+    try:
+        await bot.send_document(msg.from_user.id, document=new_filename, thumb=og_thumbnail, caption=new_filename)
+        await msg.reply_text(
+            f"┏📥 **File Name:** {new_filename}\n"
+            f"┠💾 **Size:** {filesize_human}\n"
+            f"┠♻️ **Mode:** Multitask\n"
+            f"┗🚹 **Request User:** {msg.from_user.mention}\n\n"
+            f"❄**File has been sent to Bot PM!**"
+        )
+    except Exception as e:
+        await sts.edit(f"Error uploading cleaned file: {e}")
+    finally:
+        os.remove(downloaded)
+        if og_thumbnail and os.path.exists(og_thumbnail):
+            os.remove(og_thumbnail)
+        await sts.delete()"""
+
+@Client.on_message(filters.private & filters.command("multitask"))
+async def multitask_command(bot, msg):
+    global MULTITASK_ENABLED
+
+    if not MULTITASK_ENABLED:
+        return await msg.reply_text("The multitask feature is currently disabled.")
+
+    if len(msg.command) < 2:
+        return await msg.reply_text("Please provide the required arguments\nFormat: `/multitask -m video_title | audio_title | subtitle_title -n new_filename.mkv`")
+
+    command_text = " ".join(msg.command[1:]).strip()
+    metadata = []
+    new_filename = None
+
+    if "-m" in command_text:
+        metadata_part = command_text.split('-m')[1].split('-n')[0].strip()
+        if '|' in metadata_part:
+            metadata = list(map(str.strip, metadata_part.split('|')))
+
+    if "-n" in command_text:
+        try:
+            new_filename_part = command_text.split('-n')[1].strip()
+            if new_filename_part.lower().endswith(('.mkv', '.mp4', '.avi')):
+                new_filename = new_filename_part
+            else:
+                raise ValueError("Invalid file extension. Please use a valid video file extension (e.g., .mkv, .mp4, .avi).")
+        except IndexError:
+            return await msg.reply_text("Please provide a valid filename with the -n option (e.g., `-n new_filename.mkv`).")
+        except ValueError as ve:
+            return await msg.reply_text(str(ve))
+
+    if not metadata or not new_filename:
+        return await msg.reply_text("Please provide all necessary arguments.\nFormat: `/multitask -m video_title | audio_title | subtitle_title -n new_filename.mkv`")
+
+    reply = msg.reply_to_message
+    if not reply:
+        return await msg.reply_text("Please reply to a media file with the multitask command.")
+
+    media = reply.document or reply.audio or reply.video
+    if not media:
+        return await msg.reply_text("Please reply to a valid media file (audio, video, or document) with the multitask command.")
+
+    sts = await msg.reply_text("🚀 Downloading media... ⚡")
+    try:
+        downloaded = await reply.download()
+    except Exception as e:
+        await sts.edit(f"Error downloading media: {e}")
+        return
+
+    video_title, audio_title, subtitle_title = metadata
+
+    thumbnail_path = f"{DOWNLOAD_LOCATION}/thumbnail_{msg.from_user.id}.jpg"
+    og_thumbnail = None
+    if os.path.exists(thumbnail_path):
+        og_thumbnail = thumbnail_path
+    else:
+        try:
+            og_thumbnail = await bot.download_media(media.thumbs[0].file_id, file_name=thumbnail_path)
+        except Exception as e:
+            await sts.edit(f"Error downloading thumbnail: {e}")
+            og_thumbnail = None
+
+    await sts.edit("💠 Changing metadata... ⚡")
+    try:
+        change_video_metadata(downloaded, video_title, audio_title, subtitle_title, new_filename)
+    except Exception as e:
+        await sts.edit(f"Error changing metadata: {e}")
+        os.remove(downloaded)
+        return
+
+    await sts.edit("📝 Finalizing file... ⚡")
     filesize = os.path.getsize(new_filename)
     filesize_human = humanbytes(filesize)
 

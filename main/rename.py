@@ -1367,7 +1367,7 @@ async def linktofile(bot, msg: Message):
         if not media:
             return await msg.reply_text("Please Reply To A Valid File, Video, Audio, or Link With filename + .extension (e.g., `.mkv`, `.mp4`, or `.zip`)")
 
-        og_media = getattr(reply, reply.media.value)
+        og_media = getattr(reply, media.file_type)
         sts = await msg.reply_text("🚀 Downloading...")
         c_time = time.time()
         try:
@@ -1388,12 +1388,12 @@ async def linktofile(bot, msg: Message):
         # Thumbnail handling
         thumbnail_path = f"{DOWNLOAD_LOCATION}/thumbnail_{msg.from_user.id}.jpg"
         file_thumb = None
-        try:
-            if og_media.thumbs:
+        if og_media.thumbs:
+            try:
                 file_thumb = await bot.download_media(og_media.thumbs[0].file_id, file_name=thumbnail_path)
-        except Exception as e:
-            print(f"Error downloading thumbnail: {e}")
-            file_thumb = None
+            except Exception as e:
+                print(f"Error downloading thumbnail: {e}")
+                file_thumb = None
 
         await sts.edit("💠 Uploading...")
         c_time = time.time()
@@ -1490,7 +1490,7 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str):
         except Exception as e:
             print(f"Error deleting file: {e}")
         await sts.delete()
-
+                    
         
  
  # Define restart_app command

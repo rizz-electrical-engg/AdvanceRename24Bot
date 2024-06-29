@@ -1350,9 +1350,8 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str):
         await sts.delete()"""
 
 
-
 @Client.on_message(filters.command("leech") & filters.chat(AUTH_USERS))
-async def leech_command(bot, msg: Message):
+async def linktofile(bot, msg: Message):
     reply = msg.reply_to_message
     if len(msg.command) < 2 or not reply:
         return await msg.reply_text("Please Reply To A File, Video, Audio, or Link With filename + .extension (e.g., `.mkv`, `.mp4`, or `.zip`)")
@@ -1390,14 +1389,14 @@ async def leech_command(bot, msg: Message):
 
         # Thumbnail handling
         thumbnail_path = f"{DOWNLOAD_LOCATION}/thumbnail_{msg.from_user.id}.jpg"
-        file_thumb = None
-        try:
-            if media and media.thumbs:
-                thumbnail_id = media.thumbs[0].file_id
-                file_thumb = await bot.download_media(thumbnail_id, file_name=thumbnail_path)
-        except Exception as e:
-            print(f"Error downloading thumbnail: {e}")
-            file_thumb = None
+        if not os.path.exists(thumbnail_path):
+            try:
+                file_thumb = await bot.download_media(media.thumbs[0].file_id, file_name=thumbnail_path)
+            except Exception as e:
+                print(f"Error downloading thumbnail: {e}")
+                file_thumb = None
+        else:
+            file_thumb = thumbnail_path
 
         await sts.edit("💠 Uploading...")
         c_time = time.time()
@@ -1462,16 +1461,16 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str, medi
     filesize_human = humanbytes(filesize)
     cap = f"{new_name}\n\n🌟 Size: {filesize_human}"
 
-    # Thumbnail handling for downloaded link (assuming it's a document now)
+    # Thumbnail handling
     thumbnail_path = f"{DOWNLOAD_LOCATION}/thumbnail_{msg.from_user.id}.jpg"
-    file_thumb = None
-    try:
-        if media and media.thumbs:
-            thumbnail_id = media.thumbs[0].file_id
-            file_thumb = await bot.download_media(thumbnail_id, file_name=thumbnail_path)
-    except Exception as e:
-        print(f"Error downloading thumbnail: {e}")
-        file_thumb = None
+    if not os.path.exists(thumbnail_path):
+        try:
+            file_thumb = await bot.download_media(media.thumbs[0].file_id, file_name=thumbnail_path)
+        except Exception as e:
+            print(f"Error downloading thumbnail: {e}")
+            file_thumb = None
+    else:
+        file_thumb = thumbnail_path
 
     await sts.edit("💠 Uploading...")
     c_time = time.time()
@@ -1489,6 +1488,8 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str, medi
         except Exception as e:
             print(f"Error deleting file: {e}")
         await sts.delete()
+
+            
     
     
         

@@ -1560,8 +1560,10 @@ async def set_photo(bot, msg):
     except Exception as e:
         await msg.reply_text(f"Error saving photo: {e}")
 
+
+
 # Command handler for compressing video
-@Client.on_message(filters.private & filters.command("compressvideo"))
+@app.on_message(filters.private & filters.command("compressvideo"))
 async def compress_video(bot, msg):
     global VIDEO_COMPRESS_ENABLED
 
@@ -1589,7 +1591,7 @@ async def compress_video(bot, msg):
     # Start downloading with progress shown in bot
     sts = await msg.reply_text("🚀 Downloading media... ⚡")
     try:
-        downloaded = await download_with_progress(bot, msg.chat.id, reply)
+        downloaded = await download_with_progress(bot, msg.chat.id, sts, reply)
     except Exception as e:
         await sts.edit(f"Error downloading media: {e}")
         return
@@ -1620,23 +1622,23 @@ async def compress_video(bot, msg):
         os.remove(output_file)
         await sts.delete()
 
-async def download_with_progress(bot, chat_id, reply_message):
+async def download_with_progress(bot, chat_id, status_message, reply_message):
     """
     Download a file with progress bar using tqdm and update progress in bot.
     """
     async def progress_callback(current, total):
         nonlocal download_progress_bar
         download_progress_bar.update(current - download_progress_bar.n)
-        await bot.edit_message_text(chat_id, sts.message_id, f"🚀 Downloading media... ⚡ {download_progress_bar}%")
+        progress_percent = int((current / total) * 100)
+        await bot.edit_message_text(chat_id, status_message.message_id, f"🚀 Downloading media... ⚡ {progress_percent}%")
 
     # Start downloading with progress bar
     download_progress_bar = tqdm(total=reply_message.document.file_size, unit='B', unit_scale=True)
-    sts = await bot.send_message(chat_id, "🚀 Downloading media... ⚡ 0%")
     try:
         file_path = await reply_message.download(progress=progress_callback)
     finally:
         download_progress_bar.close()
-        await bot.edit_message_text(chat_id, sts.message_id, "🚀 Downloading media... ⚡ Complete")
+        await bot.edit_message_text(chat_id, status_message.message_id, "🚀 Downloading media... ⚡ Complete")
 
     return file_path
 

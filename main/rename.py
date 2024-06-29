@@ -17,7 +17,7 @@ from main.utils import heroku_restart, upload_files, download_media
 import aiohttp
 from pyrogram.errors import RPCError, FloodWait
 import asyncio
-from main.ffmpeg import compress_video_file, remove_all_tags, change_video_metadata, generate_sample_video, add_photo_attachment, merge_videos, unzip_file
+from main.ffmpeg import remove_all_tags, change_video_metadata, generate_sample_video, add_photo_attachment, merge_videos, unzip_file
 
 
 

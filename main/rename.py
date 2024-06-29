@@ -37,7 +37,7 @@ RENAME_ENABLED = True
 REMOVETAGS_ENABLED = True
 CHANGE_INDEX_ENABLED = True 
 MERGE_ENABLED = True
-
+VIDEO_COMPRESS_ENABLED = True
 
 
 # Command handler to start the interaction (only in admin)
@@ -1560,7 +1560,67 @@ async def set_photo(bot, msg):
     except Exception as e:
         await msg.reply_text(f"Error saving photo: {e}")
 
+@Client.on_message(filters.private & filters.command("compressvideo"))
+async def compress_video(bot, msg):
+    global VIDEO_COMPRESS_ENABLED
 
+    if not VIDEO_COMPRESS_ENABLED:
+        return await msg.reply_text("Video compression feature is currently disabled.")
+
+    reply = msg.reply_to_message
+    if not reply:
+        return await msg.reply_text("Please reply to a video file with the compress video command and specify the output filename\nFormat: `compressvideo -n filename.mp4`")
+
+    if len(msg.command) < 2 or "-n" not in msg.text:
+        return await msg.reply_text("Please provide the output filename using the `-n` flag\nFormat: `compressvideo -n filename.mp4`")
+
+    command_text = " ".join(msg.command[1:]).strip()
+    filename_part = command_text.split('-n', 1)[1].strip()
+    output_filename = filename_part if filename_part else None
+
+    if not output_filename:
+        return await msg.reply_text("Please provide a valid filename\nFormat: `compressvideo -n filename.mp4`")
+
+    video = reply.video
+    if not video:
+        return await msg.reply_text("Please reply to a valid video file with the compress video command.")
+
+    sts = await msg.reply_text("🚀 Downloading video... ⚡")
+    try:
+        downloaded = await reply.download()
+    except Exception as e:
+        await sts.edit(f"Error downloading video: {e}")
+        return
+
+    output_file = os.path.join(DOWNLOAD_LOCATION, output_filename)
+
+    await sts.edit("💠 Compressing video... ⚡")
+    try:
+        compress_video_file(downloaded, output_file)
+    except Exception as e:
+        await sts.edit(f"Error compressing video: {e}")
+        os.remove(downloaded)
+        return
+
+    filesize = os.path.getsize(output_file)
+    filesize_human = humanbytes(filesize)
+
+    await sts.edit("🔼 Uploading compressed video... ⚡")
+    try:
+        await bot.send_video(msg.from_user.id, output_file, caption=output_filename)
+        await msg.reply_text(
+            f"┏📥 **File Name:** {output_filename}\n"
+            f"┠💾 **Size:** {filesize_human}\n"
+            f"┠♻️ **Mode:** Compress Video\n"
+            f"┗🚹 **Request User:** {msg.from_user.mention}\n\n"
+            f"❄ **File have been Sent in Bot PM!**"
+        )
+    except Exception as e:
+        await sts.edit(f"Error uploading compressed video: {e}")
+    finally:
+        os.remove(downloaded)
+        os.remove(output_file)
+        await sts.delete()
 
 
 if __name__ == '__main__':

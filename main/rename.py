@@ -528,7 +528,9 @@ async def rename_file(bot, msg: Message):
 
 #MultiTask Command 
 @Client.on_message(filters.private & filters.command("multitask"))
-async def multitask_command(bot, msg: Message):
+async def multitask_command(bot, msg):
+    global MULTITASK_ENABLED
+
     if not MULTITASK_ENABLED:
         return await msg.reply_text("The multitask feature is currently disabled.")
 
@@ -543,7 +545,7 @@ async def multitask_command(bot, msg: Message):
         metadata_part = command_text.split('-m')[1].split('-n')[0].strip()
         if '|' in metadata_part:
             metadata = list(map(str.strip, metadata_part.split('|')))
-    
+
     if "-n" in command_text:
         try:
             new_filename_part = command_text.split('-n')[1].strip()
@@ -568,28 +570,24 @@ async def multitask_command(bot, msg: Message):
         return await msg.reply_text("Please reply to a valid media file (audio, video, or document) with the multitask command.")
 
     sts = await msg.reply_text("🚀 Downloading media... ⚡")
-    start_time = time.time()
     try:
-        downloaded = await reply.download(progress=progress_message, progress_args=(sts, start_time))
+        downloaded = await reply.download()
     except Exception as e:
         await sts.edit(f"Error downloading media: {e}")
         return
 
-    video_title = metadata[0]
-    audio_title = metadata[1]
-    subtitle_title = metadata[2]
+    video_title, audio_title, subtitle_title = metadata
 
     thumbnail_path = f"{DOWNLOAD_LOCATION}/thumbnail_{msg.from_user.id}.jpg"
     og_thumbnail = None
     if os.path.exists(thumbnail_path):
         og_thumbnail = thumbnail_path
     else:
-        if hasattr(media, 'thumbs') and media.thumbs:
-            try:
-                og_thumbnail = await bot.download_media(media.thumbs[0].file_id, file_name=thumbnail_path)
-            except Exception as e:
-                await sts.edit(f"Error downloading thumbnail: {e}")
-                og_thumbnail = None
+        try:
+            og_thumbnail = await bot.download_media(media.thumbs[0].file_id, file_name=thumbnail_path)
+        except Exception as e:
+            await sts.edit(f"Error downloading thumbnail: {e}")
+            og_thumbnail = None
 
     await sts.edit("💠 Changing metadata... ⚡")
     try:
@@ -603,15 +601,14 @@ async def multitask_command(bot, msg: Message):
     filesize_human = humanbytes(filesize)
 
     await sts.edit("💠 Uploading cleaned file... ⚡")
-    start_time = time.time()
     try:
-        await bot.send_document(msg.from_user.id, document=new_filename, thumb=og_thumbnail, caption=new_filename, progress=progress_message, progress_args=(sts, start_time))
+        await bot.send_document(msg.from_user.id, document=new_filename, thumb=og_thumbnail, caption=new_filename)
         await msg.reply_text(
             f"┏📥 **File Name:** {new_filename}\n"
             f"┠💾 **Size:** {filesize_human}\n"
             f"┠♻️ **Mode:** Multitask\n"
             f"┗🚹 **Request User:** {msg.from_user.mention}\n\n"
-            f"❄**File has been Sent in Bot PM!**"
+            f"❄**File has been sent to Bot PM!**"
         )
     except Exception as e:
         await sts.edit(f"Error uploading cleaned file: {e}")

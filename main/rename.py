@@ -1462,11 +1462,7 @@ async def leech_magnet(bot, msg):
     sts = await msg.reply_text("🚀 Leeching... ⚡")
     
     try:
-        if is_magnet(link):
-            download = Aria2.client.add_magnet(link)
-        else:
-            download = Aria2.client.add_uris([link])
-        
+        download = aria2.add_magnet(link) if link.startswith("magnet:") else aria2.add_uris([link])
         await track_progress(bot, msg, download, sts)
     except Exception as e:
         return await sts.edit(f"Leeching Error: {e}")
@@ -1484,26 +1480,17 @@ async def track_progress(bot, msg, download, sts):
             print(f"Edit error: {e}")
 
     file_path = download.files[0].path
-    file_size = humanbytes(download.total_length)
     await sts.edit("💠 Uploading... ⚡")
-    c_time = time.time()
     try:
-        await bot.send_document(msg.from_user.id, document=file_path, caption=f"{file_path}\n\n🌟 Size: {file_size}", progress=progress_message, progress_args=("💠 Upload Started... ⚡", sts, c_time))
-        await msg.reply_text(
-            f"┏📥 **File Name:** {os.path.basename(file_path)}\n"
-            f"┠💾 **Size:** {file_size}\n"
-            f"┠♻️ **Mode:** Leech\n"
-            f"┗🚹 **Request User:** {msg.from_user.mention}\n\n"
-            f"❄**File have been Sent in Bot PM!**"
-        )
+        await bot.send_document(msg.from_user.id, document=file_path, caption=f"Downloaded file: {file_path}")
+        await msg.reply_text("File sent successfully!")
     except Exception as e:
         return await sts.edit(f"Upload Error: {e}")
 
     try:
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        os.remove(file_path)
     except Exception as e:
-        pass
+        print(f"Failed to delete file {file_path}: {e}")
 
     await sts.delete()
 

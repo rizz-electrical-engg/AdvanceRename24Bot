@@ -127,26 +127,43 @@ async def merge_videos(input_file, output_file):
     except Exception as e:
         raise RuntimeError(f"Error merging videos: {e}")
 
+async def compress_video_file(input_path, output_path, bot, chat_id, preset='ultrafast', crf=27):
+    """
+    Compress a video file using ffmpeg with progress bar.
+    """
+    async def progress_callback(out, total):
+        nonlocal compress_progress_bar
+        compress_progress_bar.update(out - compress_progress_bar.n)
+        progress_percent = int((out / total) * 100)
+        await bot.edit_message_text(chat_id, status_message.message_id, f"💠 Compressing media... ⚡ {progress_percent}%")
 
-def compress_video_file(input_path, output_path, preset='ultrafast', crf=27):
-    """
-    Compress a video file using ffmpeg.
-    """
-    command = [
-        'ffmpeg',
-        '-i', input_path,
-        '-preset', preset,
-        '-c:v', 'libx265',
-        '-crf', str(crf),
-        '-c:a', 'aac',
-        output_path,
-        '-y'
-    ]
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
-    if process.returncode != 0:
-        raise Exception(f"FFmpeg error: {stderr.decode('utf-8')}")
-        
+    # Start compressing with progress bar
+    compress_progress_bar = tqdm(total=os.path.getsize(input_path), unit='B', unit_scale=True)
+    status_message = await bot.send_message(chat_id, "💠 Compressing media... ⚡ 0%")
+    try:
+        command = [
+            'ffmpeg',
+            '-i', input_path,
+            '-preset', preset,
+            '-c:v', 'libx265',
+            '-crf', str(crf),
+            '-c:a', 'aac',
+            output_path,
+            '-y'
+        ]
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        while True:
+            output = process.stdout.readline()
+            if process.poll() is not None:
+                break
+            if output:
+                compress_progress_bar.update(len(output))
+        compress_progress_bar.close()
+    except Exception as e:
+        await sts.edit(f"Error compressing media: {e}")
+        os.remove(downloaded)
+        return
+
 # Function to unzip files
 def unzip_file(file_path, extract_path):
     extracted_files = []

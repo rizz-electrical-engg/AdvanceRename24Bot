@@ -1,7 +1,6 @@
-import subprocess, os
+import subprocess
 import zipfile
 import asyncio
-from tqdm import tqdm
 
 def remove_all_tags(input_path, output_path):
     command = [
@@ -128,24 +127,6 @@ async def merge_videos(input_file, output_file):
     except Exception as e:
         raise RuntimeError(f"Error merging videos: {e}")
 
-async def compress_video_file(input_path, output_path, bot, chat_id, preset='ultrafast', crf=27):
-    """
-    Compress a video file using ffmpeg with progress bar.
-    """
-    try:
-        command = [
-            'ffmpeg',
-            '-i', input_path,
-            '-c:v', 'libx265',
-            '-crf', str(crf),
-            '-c:a', 'aac',
-            output_path,
-            '-y'
-        ]
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        process.communicate()
-    except Exception as e:
-        raise RuntimeError(f"Error compressing media: {e}")        
 
 # Function to unzip files
 def unzip_file(file_path, extract_path):

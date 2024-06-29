@@ -1,6 +1,7 @@
 import subprocess
 import zipfile
 import asyncio
+from tqdm import tqdm
 
 def remove_all_tags(input_path, output_path):
     command = [

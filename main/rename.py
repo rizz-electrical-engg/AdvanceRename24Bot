@@ -1568,8 +1568,8 @@ async def compress_video(bot, msg):
         return await msg.reply_text("Video compression feature is currently disabled.")
 
     reply = msg.reply_to_message
-    if not reply:
-        return await msg.reply_text("Please reply to a video file with the compress video command and specify the output filename\nFormat: `compressvideo -n filename.mp4`")
+    if not reply or not (reply.document or reply.video):
+        return await msg.reply_text("Please reply to a video or document file with the compress video command and specify the output filename\nFormat: `compressvideo -n filename.mp4`")
 
     if len(msg.command) < 2 or "-n" not in msg.text:
         return await msg.reply_text("Please provide the output filename using the `-n` flag\nFormat: `compressvideo -n filename.mp4`")
@@ -1581,47 +1581,49 @@ async def compress_video(bot, msg):
     if not output_filename:
         return await msg.reply_text("Please provide a valid filename\nFormat: `compressvideo -n filename.mp4`")
 
-    video = reply.video
+    video = reply.video or reply.document
     if not video:
-        return await msg.reply_text("Please reply to a valid video file with the compress video command.")
+        return await msg.reply_text("Please reply to a valid video or document file with the compress video command.")
 
-    sts = await msg.reply_text("🚀 Downloading video... ⚡")
+    sts = await msg.reply_text("🚀 Downloading media... ⚡")
     try:
         downloaded = await reply.download()
     except Exception as e:
-        await sts.edit(f"Error downloading video: {e}")
+        await sts.edit(f"Error downloading media: {e}")
         return
 
     output_file = os.path.join(DOWNLOAD_LOCATION, output_filename)
 
-    await sts.edit("💠 Compressing video... ⚡")
+    await sts.edit("💠 Compressing media... ⚡")
     try:
-        compress_video_file(downloaded, output_file)
+        compress_media_file(downloaded, output_file)
     except Exception as e:
-        await sts.edit(f"Error compressing video: {e}")
+        await sts.edit(f"Error compressing media: {e}")
         os.remove(downloaded)
         return
 
     filesize = os.path.getsize(output_file)
     filesize_human = humanbytes(filesize)
 
-    await sts.edit("🔼 Uploading compressed video... ⚡")
+    await sts.edit("🔼 Uploading compressed file... ⚡")
     try:
-        await bot.send_video(msg.from_user.id, output_file, caption=output_filename)
+        if reply.video:
+            await bot.send_video(msg.from_user.id, output_file, caption=output_filename)
+        else:
+            await bot.send_document(msg.from_user.id, output_file, caption=output_filename)
         await msg.reply_text(
             f"┏📥 **File Name:** {output_filename}\n"
             f"┠💾 **Size:** {filesize_human}\n"
-            f"┠♻️ **Mode:** Compress Video\n"
+            f"┠♻️ **Mode:** Compress Media\n"
             f"┗🚹 **Request User:** {msg.from_user.mention}\n\n"
             f"❄ **File have been Sent in Bot PM!**"
         )
     except Exception as e:
-        await sts.edit(f"Error uploading compressed video: {e}")
+        await sts.edit(f"Error uploading compressed file: {e}")
     finally:
         os.remove(downloaded)
         os.remove(output_file)
         await sts.delete()
-
 
 if __name__ == '__main__':
     app = Client("my_bot", bot_token=BOT_TOKEN)

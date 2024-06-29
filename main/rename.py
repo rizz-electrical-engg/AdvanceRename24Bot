@@ -21,26 +21,42 @@ from main.ffmpeg import remove_all_tags, change_video_metadata, generate_sample_
 from aria2p import API as ariaAPI, Client as ariaClient
 from re import findall as re_findall
 
-# Configuration
-ARIA2_HOST = "http://localhost"
-ARIA2_PORT = 6800
-ARIA2_SECRET = ""
 MAGNET_REGEX = r"magnet:\?xt=urn:btih:[a-zA-Z0-9]*"
-
-# Initialize Aria2
-aria2 = ariaAPI(
-    ariaClient(
-        host=ARIA2_HOST,
-        port=ARIA2_PORT,
-        secret=ARIA2_SECRET
-    )
-)
-
-
 
 def is_magnet(url: str):
     magnet = re_findall(MAGNET_REGEX, url)
     return bool(magnet)
+
+# Configuration
+ARIA2_HOST = "http://localhost"
+ARIA2_PORT = 6800
+ARIA2_SECRET = ""
+
+class Aria2:
+    client = ariaAPI(
+        ariaClient(
+            host=ARIA2_HOST,
+            port=ARIA2_PORT,
+            secret=ARIA2_SECRET
+        )
+    )
+    aria2_options = {}
+    aria2c_global = [
+        'bt-max-open-files', 'download-result', 'keep-unfinished-download-result',
+        'log', 'log-level', 'max-concurrent-downloads', 'max-download-result',
+        'max-overall-download-limit', 'save-session', 'max-overall-upload-limit',
+        'optimize-concurrent-downloads', 'save-cookies', 'server-stat-of'
+    ]
+
+    if not aria2_options:
+        aria2_options = client.client.get_global_option()
+        del aria2_options['dir']
+    else:
+        a2c_glo = {}
+        for op in aria2c_global:
+            if op in aria2_options:
+                a2c_glo[op] = aria2_options[op]
+        client.set_global_options(a2c_glo)
 
 
 DOWNLOAD_LOCATION1 = "./screenshots"
@@ -1447,9 +1463,9 @@ async def leech_magnet(bot, msg):
     
     try:
         if is_magnet(link):
-            download = aria2.add_magnet(link)
+            download = Aria2.client.add_magnet(link)
         else:
-            download = aria2.add_uris([link])
+            download = Aria2.client.add_uris([link])
         
         await track_progress(bot, msg, download, sts)
     except Exception as e:

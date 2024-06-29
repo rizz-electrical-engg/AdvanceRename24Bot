@@ -568,9 +568,9 @@ async def multitask_command(bot, msg: Message):
         return await msg.reply_text("Please reply to a valid media file (audio, video, or document) with the multitask command.")
 
     sts = await msg.reply_text("🚀 Downloading media... ⚡")
-    c_time = time.time()
+    start_time = time.time()
     try:
-        downloaded = await reply.download(progress=progress_message, progress_args=(sts, c_time))
+        downloaded = await reply.download(progress=progress_message, progress_args=(sts, start_time))
     except Exception as e:
         await sts.edit(f"Error downloading media: {e}")
         return
@@ -603,15 +603,15 @@ async def multitask_command(bot, msg: Message):
     filesize_human = humanbytes(filesize)
 
     await sts.edit("💠 Uploading cleaned file... ⚡")
-    c_time = time.time()
+    start_time = time.time()
     try:
-        await bot.send_document(msg.from_user.id, document=new_filename, thumb=og_thumbnail, caption=new_filename, progress=progress_message, progress_args=(sts, c_time))
+        await bot.send_document(msg.from_user.id, document=new_filename, thumb=og_thumbnail, caption=new_filename, progress=progress_message, progress_args=(sts, start_time))
         await msg.reply_text(
             f"┏📥 **File Name:** {new_filename}\n"
             f"┠💾 **Size:** {filesize_human}\n"
             f"┠♻️ **Mode:** Multitask\n"
             f"┗🚹 **Request User:** {msg.from_user.mention}\n\n"
-            f"❄**File have been Sent in Bot PM!**"
+            f"❄**File has been Sent in Bot PM!**"
         )
     except Exception as e:
         await sts.edit(f"Error uploading cleaned file: {e}")

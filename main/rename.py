@@ -1562,6 +1562,7 @@ async def set_photo(bot, msg):
 
 
 
+
 # Command handler for compressing video
 @Client.on_message(filters.private & filters.command("compressvideo"))
 async def compress_video(bot, msg):
@@ -1600,7 +1601,7 @@ async def compress_video(bot, msg):
 
     await sts.edit("💠 Compressing media... ⚡")
     try:
-        compress_video_file(downloaded, output_file)
+        await compress_video_file(downloaded, output_file, bot, msg.chat.id)
     except Exception as e:
         await sts.edit(f"Error compressing media: {e}")
         os.remove(downloaded)

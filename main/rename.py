@@ -1461,7 +1461,7 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str, medi
     filesize_human = humanbytes(filesize)
     cap = f"{new_name}\n\n🌟 Size: {filesize_human}"
 
-    # Thumbnail handling
+    # Thumbnail handling for downloaded link (assuming it's a document now)
     thumbnail_path = f"{DOWNLOAD_LOCATION}/thumbnail_{msg.from_user.id}.jpg"
     file_thumb = None
     try:
@@ -1489,8 +1489,6 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str, medi
         except Exception as e:
             print(f"Error deleting file: {e}")
         await sts.delete()
-
-
     
     
         

@@ -18,46 +18,6 @@ import aiohttp
 from pyrogram.errors import RPCError, FloodWait
 import asyncio
 from main.ffmpeg import remove_all_tags, change_video_metadata, generate_sample_video, add_photo_attachment, merge_videos, unzip_file
-from aria2p import API as ariaAPI, Client as ariaClient
-from re import findall as re_findall
-
-MAGNET_REGEX = r"magnet:\?xt=urn:btih:[a-zA-Z0-9]*"
-
-def is_magnet(url: str):
-    magnet = re_findall(MAGNET_REGEX, url)
-    return bool(magnet)
-
-# Configuration
-ARIA2_HOST = "http://localhost"
-ARIA2_PORT = 6800
-ARIA2_SECRET = ""
-
-class Aria2:
-    client = ariaAPI(
-        ariaClient(
-            host=ARIA2_HOST,
-            port=ARIA2_PORT,
-            secret=ARIA2_SECRET
-        )
-    )
-    aria2_options = {}
-    aria2c_global = [
-        'bt-max-open-files', 'download-result', 'keep-unfinished-download-result',
-        'log', 'log-level', 'max-concurrent-downloads', 'max-download-result',
-        'max-overall-download-limit', 'save-session', 'max-overall-upload-limit',
-        'optimize-concurrent-downloads', 'save-cookies', 'server-stat-of'
-    ]
-
-    if not aria2_options:
-        aria2_options = client.client.get_global_option()
-        del aria2_options['dir']
-    else:
-        a2c_glo = {}
-        for op in aria2c_global:
-            if op in aria2_options:
-                a2c_glo[op] = aria2_options[op]
-        client.set_global_options(a2c_glo)
-
 
 DOWNLOAD_LOCATION1 = "./screenshots"
 
@@ -1452,47 +1412,6 @@ async def set_photo(bot, msg):
     except Exception as e:
         await msg.reply_text(f"Error saving photo: {e}")
 
-
-@Client.on_message(filters.private & filters.command("leech"))
-async def leech_magnet(bot, msg):
-    if len(msg.command) < 2:
-        return await msg.reply_text("Please provide a link.")
-
-    link = msg.text.split(" ", 1)[1]
-    sts = await msg.reply_text("🚀 Leeching... ⚡")
-    
-    try:
-        download = aria2.add_magnet(link) if link.startswith("magnet:") else aria2.add_uris([link])
-        await track_progress(bot, msg, download, sts)
-    except Exception as e:
-        return await sts.edit(f"Leeching Error: {e}")
-
-async def track_progress(bot, msg, download, sts):
-    while not download.is_complete:
-        await asyncio.sleep(5)
-        download.update()
-        progress = download.progress_string()
-        speed = download.download_speed_string()
-        eta = download.eta_string()
-        try:
-            await sts.edit(f"Progress: {progress}\nSpeed: {speed}\nETA: {eta}")
-        except Exception as e:
-            print(f"Edit error: {e}")
-
-    file_path = download.files[0].path
-    await sts.edit("💠 Uploading... ⚡")
-    try:
-        await bot.send_document(msg.from_user.id, document=file_path, caption=f"Downloaded file: {file_path}")
-        await msg.reply_text("File sent successfully!")
-    except Exception as e:
-        return await sts.edit(f"Upload Error: {e}")
-
-    try:
-        os.remove(file_path)
-    except Exception as e:
-        print(f"Failed to delete file {file_path}: {e}")
-
-    await sts.delete()
 
 
 if __name__ == '__main__':

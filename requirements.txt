@@ -1,6 +1,5 @@
-pyrogram==2.0.106
-tgcrypto==1.2.3
-aria2p==0.10.4
+pyrogram==2.0.83
+tgcrypto
 ffmpeg-python
 rarfile
 ffmpeg

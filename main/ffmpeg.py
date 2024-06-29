@@ -128,6 +128,22 @@ async def merge_videos(input_file, output_file):
         raise RuntimeError(f"Error merging videos: {e}")
 
 
+def compress_video_file(input_path, output_path, preset='ultrafast', crf=27):
+    command = [
+        'ffmpeg',
+        '-i', input_path,
+        '-preset', preset,
+        '-c:v', 'libx265',
+        '-crf', str(crf),
+        '-c:a', 'aac',
+        output_path,
+        '-y'
+    ]
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    if process.returncode != 0:
+        raise Exception(f"FFmpeg error: {stderr.decode('utf-8')}")
+        
 # Function to unzip files
 def unzip_file(file_path, extract_path):
     extracted_files = []

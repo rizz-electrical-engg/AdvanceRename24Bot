@@ -1562,12 +1562,10 @@ async def set_photo(bot, msg):
 
 
 
-
 # Command handler for compressing video
 @Client.on_message(filters.private & filters.command("compressvideo"))
 async def compress_video(bot, msg):
     global VIDEO_COMPRESS_ENABLED
-
     if not VIDEO_COMPRESS_ENABLED:
         return await msg.reply_text("Video compression feature is currently disabled.")
 
@@ -1642,7 +1640,6 @@ async def download_with_progress(bot, chat_id, status_message, reply_message):
         await bot.edit_message_text(chat_id, status_message.message_id, "🚀 Downloading media... ⚡ Complete")
 
     return file_path
-
 
 if __name__ == '__main__':
     app = Client("my_bot", bot_token=BOT_TOKEN)

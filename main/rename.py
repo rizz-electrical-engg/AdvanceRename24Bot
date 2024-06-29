@@ -18,7 +18,7 @@ import aiohttp
 from pyrogram.errors import RPCError, FloodWait
 import asyncio
 from main.ffmpeg import compress_video_file, remove_all_tags, change_video_metadata, generate_sample_video, add_photo_attachment, merge_videos, unzip_file
-
+from tqdm import tqdm
 
 
 DOWNLOAD_LOCATION1 = "./screenshots"
@@ -1560,7 +1560,10 @@ async def set_photo(bot, msg):
     except Exception as e:
         await msg.reply_text(f"Error saving photo: {e}")
 
-@Client.on_message(filters.private & filters.command("compressvideo"))
+
+
+# Command handler for compressing video
+@app.on_message(filters.private & filters.command("compressvideo"))
 async def compress_video(bot, msg):
     global VIDEO_COMPRESS_ENABLED
 
@@ -1568,18 +1571,18 @@ async def compress_video(bot, msg):
         return await msg.reply_text("Video compression feature is currently disabled.")
 
     reply = msg.reply_to_message
-    if not reply or not (reply.document or reply.video):
-        return await msg.reply_text("Please reply to a video or document file with the compress video command and specify the output filename\nFormat: `compressvideo -n filename.mp4`")
+    if not reply or not (reply.video or reply.document):
+        return await msg.reply_text("Please reply to a video or document file with the compress video command and specify the output filename\nFormat: `/compressvideo -n filename.mp4`")
 
     if len(msg.command) < 2 or "-n" not in msg.text:
-        return await msg.reply_text("Please provide the output filename using the `-n` flag\nFormat: `compressvideo -n filename.mp4`")
+        return await msg.reply_text("Please provide the output filename using the `-n` flag\nFormat: `/compressvideo -n filename.mp4`")
 
     command_text = " ".join(msg.command[1:]).strip()
     filename_part = command_text.split('-n', 1)[1].strip()
     output_filename = filename_part if filename_part else None
 
     if not output_filename:
-        return await msg.reply_text("Please provide a valid filename\nFormat: `compressvideo -n filename.mp4`")
+        return await msg.reply_text("Please provide a valid filename\nFormat: `/compressvideo -n filename.mp4`")
 
     video = reply.video or reply.document
     if not video:
@@ -1587,7 +1590,7 @@ async def compress_video(bot, msg):
 
     sts = await msg.reply_text("🚀 Downloading media... ⚡")
     try:
-        downloaded = await reply.download()
+        downloaded = await download_with_progress(reply)
     except Exception as e:
         await sts.edit(f"Error downloading media: {e}")
         return
@@ -1596,7 +1599,7 @@ async def compress_video(bot, msg):
 
     await sts.edit("💠 Compressing media... ⚡")
     try:
-        compress_media_file(downloaded, output_file)
+        compress_video_file(downloaded, output_file)
     except Exception as e:
         await sts.edit(f"Error compressing media: {e}")
         os.remove(downloaded)
@@ -1608,9 +1611,9 @@ async def compress_video(bot, msg):
     await sts.edit("🔼 Uploading compressed file... ⚡")
     try:
         if reply.video:
-            await bot.send_video(msg.from_user.id, output_file, caption=output_filename)
+            await bot.send_video(msg.chat.id, output_file, caption=output_filename)
         else:
-            await bot.send_document(msg.from_user.id, output_file, caption=output_filename)
+            await bot.send_document(msg.chat.id, output_file, caption=output_filename)
         await msg.reply_text(
             f"┏📥 **File Name:** {output_filename}\n"
             f"┠💾 **Size:** {filesize_human}\n"
@@ -1624,6 +1627,25 @@ async def compress_video(bot, msg):
         os.remove(downloaded)
         os.remove(output_file)
         await sts.delete()
+
+async def download_with_progress(reply_message):
+    """
+    Download a file with progress bar using tqdm.
+    """
+    async def progress_callback(current, total):
+        nonlocal download_progress_bar
+        download_progress_bar.update(current - download_progress_bar.n)
+
+    # Start downloading with progress bar
+    download_progress_bar = tqdm(total=reply_message.document.file_size, unit='B', unit_scale=True)
+    try:
+        file_path = await reply_message.download(progress=progress_callback)
+    finally:
+        download_progress_bar.close()
+
+    return file_path
+
+
 
 if __name__ == '__main__':
     app = Client("my_bot", bot_token=BOT_TOKEN)

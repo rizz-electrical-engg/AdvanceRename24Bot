@@ -1561,14 +1561,9 @@ async def set_photo(bot, msg):
         await msg.reply_text(f"Error saving photo: {e}")
 
 
-
-# Command handler for compressing video
+#Command handler for compressing video
 @Client.on_message(filters.private & filters.command("compressvideo"))
 async def compress_video(bot, msg):
-    global VIDEO_COMPRESS_ENABLED
-    if not VIDEO_COMPRESS_ENABLED:
-        return await msg.reply_text("Video compression feature is currently disabled.")
-
     reply = msg.reply_to_message
     if not reply or not (reply.video or reply.document):
         return await msg.reply_text("Please reply to a video or document file with the compress video command and specify the output filename\nFormat: `/compressvideo -n filename.mp4`")
@@ -1587,22 +1582,24 @@ async def compress_video(bot, msg):
     if not video:
         return await msg.reply_text("Please reply to a valid video or document file with the compress video command.")
 
-    # Start downloading with progress shown in bot
+    # Send initial message indicating start of download
     sts = await msg.reply_text("🚀 Downloading media... ⚡")
+    
+    # Start downloading with progress shown in bot
     try:
-        downloaded = await download_with_progress(bot, msg.chat.id, sts, reply)
+        downloaded_file = await download_with_progress(bot, msg.chat.id, sts, reply)
     except Exception as e:
         await sts.edit(f"Error downloading media: {e}")
         return
 
-    output_file = os.path.join(DOWNLOAD_LOCATION, output_filename)
+    output_file = f"/path/to/output/location/{output_filename}"  # Replace with your desired output location
 
     await sts.edit("💠 Compressing media... ⚡")
+
     try:
-        await compress_video_file(downloaded, output_file, bot, msg.chat.id)
+        await compress_video_file(downloaded_file, output_file, bot, msg.chat.id)
     except Exception as e:
         await sts.edit(f"Error compressing media: {e}")
-        os.remove(downloaded)
         return
 
     await sts.edit("🔼 Uploading compressed file... ⚡")
@@ -1612,12 +1609,12 @@ async def compress_video(bot, msg):
         else:
             await bot.send_document(msg.chat.id, output_file, caption=output_filename)
         
-        # Simplified response message
         await msg.reply_text("File compression and upload complete.")
     except Exception as e:
         await sts.edit(f"Error uploading compressed file: {e}")
     finally:
-        os.remove(downloaded)
+        # Clean up downloaded and temporary files
+        os.remove(downloaded_file)
         os.remove(output_file)
         await sts.delete()
 
@@ -1629,7 +1626,8 @@ async def download_with_progress(bot, chat_id, status_message, reply_message):
         nonlocal download_progress_bar
         download_progress_bar.update(current - download_progress_bar.n)
         progress_percent = int((current / total) * 100)
-        await bot.edit_message_text(chat_id, status_message.message_id, f"🚀 Downloading media... ⚡ {progress_percent}%")
+        if hasattr(status_message, 'message_id'):
+            await bot.edit_message_text(chat_id, status_message.message_id, f"🚀 Downloading media... ⚡ {progress_percent}%")
 
     # Start downloading with progress bar
     download_progress_bar = tqdm(total=reply_message.document.file_size, unit='B', unit_scale=True)
@@ -1637,9 +1635,12 @@ async def download_with_progress(bot, chat_id, status_message, reply_message):
         file_path = await reply_message.download(progress=progress_callback)
     finally:
         download_progress_bar.close()
-        await bot.edit_message_text(chat_id, status_message.message_id, "🚀 Downloading media... ⚡ Complete")
+        if hasattr(status_message, 'message_id'):
+            await bot.edit_message_text(chat_id, status_message.message_id, "🚀 Downloading media... ⚡ Complete")
 
     return file_path
+
+
 
 if __name__ == '__main__':
     app = Client("my_bot", bot_token=BOT_TOKEN)

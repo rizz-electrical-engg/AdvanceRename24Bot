@@ -1347,6 +1347,7 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str):
             print(f"Error deleting file: {e}")
         await sts.delete()"""
 
+
 @Client.on_message(filters.command("linktofile") & filters.chat(AUTH_USERS))
 async def linktofile(bot, msg: Message):
     reply = msg.reply_to_message
@@ -1362,12 +1363,11 @@ async def linktofile(bot, msg: Message):
         return await msg.reply_text("Please Reply To A File, Video, Audio, or Link With filename + .extension (e.g., `.mkv`, `.mp4`, or `.zip`)")
 
     if reply.text and ("seedr" in reply.text or "workers" in reply.text):
-        await handle_link_download(bot, msg, reply.text, new_name)
+        await handle_link_download(bot, msg, reply.text, new_name, media)
     else:
         if not media:
             return await msg.reply_text("Please Reply To A Valid File, Video, Audio, or Link With filename + .extension (e.g., `.mkv`, `.mp4`, or `.zip`)")
 
-        og_media = getattr(reply, media.file_type)
         sts = await msg.reply_text("🚀 Downloading...")
         c_time = time.time()
         try:
@@ -1375,7 +1375,7 @@ async def linktofile(bot, msg: Message):
         except RPCError as e:
             return await sts.edit(f"Download failed: {e}")
 
-        filesize = humanbytes(og_media.file_size)
+        filesize = humanbytes(media.file_size)
 
         if CAPTION:
             try:
@@ -1388,9 +1388,9 @@ async def linktofile(bot, msg: Message):
         # Thumbnail handling
         thumbnail_path = f"{DOWNLOAD_LOCATION}/thumbnail_{msg.from_user.id}.jpg"
         file_thumb = None
-        if og_media.thumbs:
+        if media.thumbs:
             try:
-                file_thumb = await bot.download_media(og_media.thumbs[0].file_id, file_name=thumbnail_path)
+                file_thumb = await bot.download_media(media.thumbs[0].file_id, file_name=thumbnail_path)
             except Exception as e:
                 print(f"Error downloading thumbnail: {e}")
                 file_thumb = None
@@ -1432,7 +1432,7 @@ async def linktofile(bot, msg: Message):
                 print(f"Error deleting files: {e}")
             await sts.delete()
 
-async def handle_link_download(bot, msg: Message, link: str, new_name: str):
+async def handle_link_download(bot, msg: Message, link: str, new_name: str, media):
     sts = await msg.reply_text("🚀 Downloading from link...")
     c_time = time.time()
 
@@ -1453,22 +1453,16 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str):
         await sts.edit("File not found after download. Please check the link and try again.")
         return
 
+    # Assuming CAPTION and other necessary constants are defined properly
     filesize = os.path.getsize(new_name)
-    filesize = humanbytes(filesize)
-
-    if CAPTION:
-        try:
-            cap = CAPTION.format(file_name=new_name, file_size=filesize)
-        except Exception as e:
-            await sts.edit(text=f"Your caption has an error: unexpected keyword ({e})")
-            return
-    else:
-        cap = f"{new_name}\n\n🌟 Size: {filesize}"
+    filesize_human = humanbytes(filesize)
+    cap = f"{new_name}\n\n🌟 Size: {filesize_human}"
 
     # Thumbnail handling
     thumbnail_path = f"{DOWNLOAD_LOCATION}/thumbnail_{msg.from_user.id}.jpg"
     file_thumb = None
     try:
+        # Example of how you might download a thumbnail, adjust as per your needs
         file_thumb = await bot.download_media(media.thumbs[0].file_id, file_name=thumbnail_path)
     except Exception as e:
         print(f"Error downloading thumbnail: {e}")
@@ -1490,7 +1484,7 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str):
         except Exception as e:
             print(f"Error deleting file: {e}")
         await sts.delete()
-                    
+    
         
  
  # Define restart_app command

@@ -132,9 +132,6 @@ async def compress_video_file(input_path, output_path, bot, chat_id, preset='ult
     """
     Compress a video file using ffmpeg with progress bar.
     """
-    # Use tqdm to show compression progress
-    compress_progress_bar = tqdm(total=os.path.getsize(input_path), unit='B', unit_scale=True)
-    status_message = await bot.send_message(chat_id, "💠 Compressing media... ⚡ 0%")
     try:
         command = [
             'ffmpeg',
@@ -146,22 +143,10 @@ async def compress_video_file(input_path, output_path, bot, chat_id, preset='ult
             '-y'
         ]
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        while True:
-            output = process.stdout.readline()
-            if process.poll() is not None:
-                break
-            if output:
-                compress_progress_bar.update(len(output))
-                if hasattr(status_message, 'message_id'):
-                    await bot.edit_message_text(chat_id, status_message.message_id, "💠 Compressing media... ⚡ Progress")  # Update with actual progress
-        compress_progress_bar.close()
-        if hasattr(status_message, 'message_id'):
-            await bot.edit_message_text(chat_id, status_message.message_id, "💠 Compressing media... ⚡ 100%")
+        process.communicate()
     except Exception as e:
-        await bot.edit_message_text(chat_id, status_message.message_id, f"Error compressing media: {e}")
-        return
-    finally:
-        compress_progress_bar.close()
+        raise RuntimeError(f"Error compressing media: {e}")
+        
         
 
 # Function to unzip files

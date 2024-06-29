@@ -1233,7 +1233,7 @@ async def sample_video(bot, msg):
     os.remove(output_file)
     await sts.delete()
 
-  @Client.on_message(filters.command("leech") & filters.chat(AUTH_USERS))
+@Client.on_message(filters.command("leech") & filters.chat(AUTH_USERS))
 async def linktofile(bot, msg: Message):
     reply = msg.reply_to_message
     if len(msg.command) < 2 or not reply:

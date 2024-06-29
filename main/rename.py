@@ -36,7 +36,7 @@ aria2 = ariaAPI(
     )
 )
 
-aria2.add_magnet()
+
 
 def is_magnet(url: str):
     magnet = re_findall(MAGNET_REGEX, url)

@@ -1560,10 +1560,8 @@ async def set_photo(bot, msg):
     except Exception as e:
         await msg.reply_text(f"Error saving photo: {e}")
 
-
-
 # Command handler for compressing video
-@Client.on_message(filters.private & filters.command("compressvideo"))
+@app.on_message(filters.private & filters.command("compressvideo"))
 async def compress_video(bot, msg):
     global VIDEO_COMPRESS_ENABLED
 
@@ -1588,9 +1586,10 @@ async def compress_video(bot, msg):
     if not video:
         return await msg.reply_text("Please reply to a valid video or document file with the compress video command.")
 
+    # Start downloading with progress shown in bot
     sts = await msg.reply_text("🚀 Downloading media... ⚡")
     try:
-        downloaded = await download_with_progress(reply)
+        downloaded = await download_with_progress(bot, msg.chat.id, reply)
     except Exception as e:
         await sts.edit(f"Error downloading media: {e}")
         return
@@ -1605,22 +1604,15 @@ async def compress_video(bot, msg):
         os.remove(downloaded)
         return
 
-    filesize = os.path.getsize(output_file)
-    filesize_human = humanbytes(filesize)
-
     await sts.edit("🔼 Uploading compressed file... ⚡")
     try:
         if reply.video:
             await bot.send_video(msg.chat.id, output_file, caption=output_filename)
         else:
             await bot.send_document(msg.chat.id, output_file, caption=output_filename)
-        await msg.reply_text(
-            f"┏📥 **File Name:** {output_filename}\n"
-            f"┠💾 **Size:** {filesize_human}\n"
-            f"┠♻️ **Mode:** Compress Media\n"
-            f"┗🚹 **Request User:** {msg.from_user.mention}\n\n"
-            f"❄ **File have been Sent in Bot PM!**"
-        )
+        
+        # Simplified response message
+        await msg.reply_text("File compression and upload complete.")
     except Exception as e:
         await sts.edit(f"Error uploading compressed file: {e}")
     finally:
@@ -1628,23 +1620,25 @@ async def compress_video(bot, msg):
         os.remove(output_file)
         await sts.delete()
 
-async def download_with_progress(reply_message):
+async def download_with_progress(bot, chat_id, reply_message):
     """
-    Download a file with progress bar using tqdm.
+    Download a file with progress bar using tqdm and update progress in bot.
     """
     async def progress_callback(current, total):
         nonlocal download_progress_bar
         download_progress_bar.update(current - download_progress_bar.n)
+        await bot.edit_message_text(chat_id, sts.message_id, f"🚀 Downloading media... ⚡ {download_progress_bar}%")
 
     # Start downloading with progress bar
     download_progress_bar = tqdm(total=reply_message.document.file_size, unit='B', unit_scale=True)
+    sts = await bot.send_message(chat_id, "🚀 Downloading media... ⚡ 0%")
     try:
         file_path = await reply_message.download(progress=progress_callback)
     finally:
         download_progress_bar.close()
+        await bot.edit_message_text(chat_id, sts.message_id, "🚀 Downloading media... ⚡ Complete")
 
     return file_path
-
 
 
 if __name__ == '__main__':

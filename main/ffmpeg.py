@@ -131,20 +131,13 @@ async def compress_video_file(input_path, output_path, bot, chat_id, preset='ult
     """
     Compress a video file using ffmpeg with progress bar.
     """
-    async def progress_callback(out, total):
-        nonlocal compress_progress_bar
-        compress_progress_bar.update(out - compress_progress_bar.n)
-        progress_percent = int((out / total) * 100)
-        await bot.edit_message_text(chat_id, status_message.message_id, f"💠 Compressing media... ⚡ {progress_percent}%")
-
-    # Start compressing with progress bar
+    # Use tqdm to show compression progress
     compress_progress_bar = tqdm(total=os.path.getsize(input_path), unit='B', unit_scale=True)
     status_message = await bot.send_message(chat_id, "💠 Compressing media... ⚡ 0%")
     try:
         command = [
             'ffmpeg',
             '-i', input_path,
-            '-preset', preset,
             '-c:v', 'libx265',
             '-crf', str(crf),
             '-c:a', 'aac',
@@ -158,11 +151,17 @@ async def compress_video_file(input_path, output_path, bot, chat_id, preset='ult
                 break
             if output:
                 compress_progress_bar.update(len(output))
+                if hasattr(status_message, 'message_id'):
+                    await bot.edit_message_text(chat_id, status_message.message_id, "💠 Compressing media... ⚡ Progress")  # Update with actual progress
         compress_progress_bar.close()
+        if hasattr(status_message, 'message_id'):
+            await bot.edit_message_text(chat_id, status_message.message_id, "💠 Compressing media... ⚡ 100%")
     except Exception as e:
-        await sts.edit(f"Error compressing media: {e}")
-        os.remove(downloaded)
+        await bot.edit_message_text(chat_id, status_message.message_id, f"Error compressing media: {e}")
         return
+    finally:
+        compress_progress_bar.close()
+        
 
 # Function to unzip files
 def unzip_file(file_path, extract_path):

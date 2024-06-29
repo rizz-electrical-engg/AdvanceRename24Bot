@@ -1629,7 +1629,8 @@ async def download_with_progress(bot, chat_id, status_message, reply_message):
         nonlocal download_progress_bar
         download_progress_bar.update(current - download_progress_bar.n)
         progress_percent = int((current / total) * 100)
-        await bot.edit_message_text(chat_id, status_message.message_id, f"🚀 Downloading media... ⚡ {progress_percent}%")
+        if hasattr(status_message, 'message_id'):
+            await bot.edit_message_text(chat_id, status_message.message_id, f"🚀 Downloading media... ⚡ {progress_percent}%")
 
     # Start downloading with progress bar
     download_progress_bar = tqdm(total=reply_message.document.file_size, unit='B', unit_scale=True)
@@ -1637,9 +1638,11 @@ async def download_with_progress(bot, chat_id, status_message, reply_message):
         file_path = await reply_message.download(progress=progress_callback)
     finally:
         download_progress_bar.close()
-        await bot.edit_message_text(chat_id, status_message.message_id, "🚀 Downloading media... ⚡ Complete")
+        if hasattr(status_message, 'message_id'):
+            await bot.edit_message_text(chat_id, status_message.message_id, "🚀 Downloading media... ⚡ Complete")
 
     return file_path
+
 
 
 if __name__ == '__main__':

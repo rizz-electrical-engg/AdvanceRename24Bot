@@ -527,19 +527,20 @@ async def rename_file(bot, msg):
 
     await sts.delete()"""
 
+
+
 @Client.on_message(filters.private & filters.command("rename"))
-async def rename_file(bot, msg):
-    global RENAME_ENABLED
+async def rename_file(bot, msg: Message):
     if not RENAME_ENABLED:
         return await msg.reply_text("The rename feature is currently disabled.")
 
     reply = msg.reply_to_message
     if len(msg.command) < 2 or not reply:
-        return await msg.reply_text("Please reply to a file, video, or audio with the new filename and extension (e.g., .mkv, .mp4, or .zip)")
+        return await msg.reply_text("Please reply to a file, video, or audio with the new filename and extension (e.g., .mkv, .mp4, .zip).")
 
     media = reply.document or reply.audio or reply.video
     if not media:
-        return await msg.reply_text("Please reply to a file, video, or audio with the new filename and extension (e.g., .mkv, .mp4, or .zip)")
+        return await msg.reply_text("Please reply to a file, video, or audio with the new filename and extension (e.g., .mkv, .mp4, .zip).")
 
     new_name = msg.text.split(" ", 1)[1]
     sts = await msg.reply_text("🚀 Downloading... ⚡")
@@ -550,44 +551,41 @@ async def rename_file(bot, msg):
     if CAPTION:
         try:
             cap = CAPTION.format(file_name=new_name, file_size=filesize)
-        except Exception as e:
+        except KeyError as e:
             return await sts.edit(text=f"Caption error: unexpected keyword ({e})")
     else:
         cap = f"{new_name}\n\n🌟 Size: {filesize}"
 
     thumbnail_path = f"{DOWNLOAD_LOCATION}/thumbnail_{msg.from_user.id}.jpg"
-
+    og_thumbnail = None
     if os.path.exists(thumbnail_path):
         og_thumbnail = thumbnail_path
     else:
-        try:
-            og_thumbnail = await bot.download_media(media.thumbs[0].file_id, file_name=thumbnail_path)
-        except Exception as e:
-            og_thumbnail = None
+        if hasattr(media, 'thumbs') and media.thumbs:
+            try:
+                og_thumbnail = await bot.download_media(media.thumbs[0].file_id, file_name=thumbnail_path)
+            except Exception:
+                pass
 
     await sts.edit("💠 Uploading... ⚡")
     c_time = time.time()
     try:
         await bot.send_document(msg.from_user.id, document=downloaded, thumb=og_thumbnail, caption=cap, progress=progress_message, progress_args=("💠 Upload Started... ⚡", sts, c_time))
-        
-        notification_text = (
+        await msg.reply_text(
             f"┏📥 **File Name:** {new_name}\n"
             f"┠💾 **Size:** {filesize}\n"
             f"┠♻️ **Mode:** Rename\n"
             f"┗🚹 **Request User:** {msg.from_user.mention}\n\n"
-            f"❄**File has been sent in Bot PM!**"
+            f"❄ **File has been sent in Bot PM!**"
         )
-        
-        await bot.send_message(chat_id=bot.get_me().id, text=notification_text)
-        
     except Exception as e:
-        return await sts.edit(f"Error: {e}")
+        await sts.edit(f"Error: {e}")
 
     try:
         os.remove(downloaded)
         if og_thumbnail and os.path.exists(og_thumbnail):
             os.remove(og_thumbnail)
-    except Exception as e:
+    except Exception:
         pass
 
     await sts.delete()

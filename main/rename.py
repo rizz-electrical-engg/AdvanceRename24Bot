@@ -18,17 +18,10 @@ import aiohttp
 from pyrogram.errors import RPCError, FloodWait
 import asyncio
 from main.ffmpeg import remove_all_tags, change_video_metadata, generate_sample_video, add_photo_attachment, merge_videos, unzip_file
-
-import os
 import pathlib
 import time
 from datetime import datetime
-
 import pyrogram
-from pyrogram import Client
-from pyrogram import filters
-
-from bot import logger
 from helper_funcs import gdriveTools
 from helper_funcs.bot_utils import sanitize_file_name, sanitize_text, get_readable_file_size
 from helper_funcs.display_progress import progress_for_pyrogram
@@ -1619,7 +1612,6 @@ async def tg_to_gdrive_upload(client, update):
 
     download_directory = the_real_download_location
     if os.path.exists(download_directory):
-        end_one = datetime.now()
         up_name = pathlib.PurePath(download_directory).name
         size = get_readable_file_size(get_path_size(download_directory))
         try:
@@ -1629,10 +1621,8 @@ async def tg_to_gdrive_upload(client, update):
                 text="Download Completed!!!\n Upload in progress",
             )
         except Exception as e:
-            logger.info(str(e))
             pass
 
-        logger.info(f"Upload Name : {up_name}")
         drive = gdriveTools.GoogleDriveHelper(up_name)
         gd_url, index_url = drive.upload(download_directory)
 
@@ -1640,7 +1630,6 @@ async def tg_to_gdrive_upload(client, update):
         button.append([pyrogram.types.InlineKeyboardButton(text="☁️ CloudUrl ☁️", url=f"{gd_url}")])
 
         if Config.INDEX_URL:
-            logger.info(index_url)
             button.append([pyrogram.types.InlineKeyboardButton(text="ℹ️ IndexUrl ℹ️", url=f"{index_url}")])
 
         button_markup = pyrogram.types.InlineKeyboardMarkup(button)

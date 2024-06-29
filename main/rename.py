@@ -1388,7 +1388,7 @@ async def linktofile(bot, msg: Message):
         # Thumbnail handling
         thumbnail_path = f"{DOWNLOAD_LOCATION}/thumbnail_{msg.from_user.id}.jpg"
         file_thumb = None
-        if media.thumbs:
+        if media and media.thumbs:
             try:
                 file_thumb = await bot.download_media(media.thumbs[0].file_id, file_name=thumbnail_path)
             except Exception as e:
@@ -1462,8 +1462,9 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str, medi
     thumbnail_path = f"{DOWNLOAD_LOCATION}/thumbnail_{msg.from_user.id}.jpg"
     file_thumb = None
     try:
-        # Example of how you might download a thumbnail, adjust as per your needs
-        file_thumb = await bot.download_media(media.thumbs[0].file_id, file_name=thumbnail_path)
+        if media and media.thumbs:
+            # Example of how you might download a thumbnail, adjust as per your needs
+            file_thumb = await bot.download_media(media.thumbs[0].file_id, file_name=thumbnail_path)
     except Exception as e:
         print(f"Error downloading thumbnail: {e}")
         file_thumb = None
@@ -1484,6 +1485,9 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str, medi
         except Exception as e:
             print(f"Error deleting file: {e}")
         await sts.delete()
+
+
+    
     
         
  
@@ -1552,6 +1556,9 @@ async def set_photo(bot, msg):
         await msg.reply_text(f"Photo saved successfully as `{attachment_path}`.")
     except Exception as e:
         await msg.reply_text(f"Error saving photo: {e}")
+
+
+
 
 
 

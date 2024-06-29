@@ -1347,7 +1347,6 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str):
             print(f"Error deleting file: {e}")
         await sts.delete()"""
 
-
 @Client.on_message(filters.command("linktofile") & filters.chat(AUTH_USERS))
 async def linktofile(bot, msg: Message):
     reply = msg.reply_to_message
@@ -1389,12 +1388,12 @@ async def linktofile(bot, msg: Message):
         # Thumbnail handling
         thumbnail_path = f"{DOWNLOAD_LOCATION}/thumbnail_{msg.from_user.id}.jpg"
         file_thumb = None
-        if og_media.thumbs:
-            try:
+        try:
+            if og_media.thumbs:
                 file_thumb = await bot.download_media(og_media.thumbs[0].file_id, file_name=thumbnail_path)
-            except Exception as e:
-                print(f"Error downloading thumbnail: {e}")
-                file_thumb = None
+        except Exception as e:
+            print(f"Error downloading thumbnail: {e}")
+            file_thumb = None
 
         await sts.edit("💠 Uploading...")
         c_time = time.time()
@@ -1425,9 +1424,10 @@ async def linktofile(bot, msg: Message):
             await sts.edit(f"Upload timed out: {e}")
         finally:
             try:
-                if file_thumb:
+                if file_thumb and os.path.exists(file_thumb):
                     os.remove(file_thumb)
-                os.remove(downloaded)
+                if os.path.exists(downloaded):
+                    os.remove(downloaded)
             except Exception as e:
                 print(f"Error deleting files: {e}")
             await sts.delete()
@@ -1490,6 +1490,8 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str):
         except Exception as e:
             print(f"Error deleting file: {e}")
         await sts.delete()
+
+        
  
  # Define restart_app command
 @Client.on_message(filters.command("restart") & filters.chat(AUTH_USERS))

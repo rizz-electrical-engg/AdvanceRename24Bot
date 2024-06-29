@@ -145,9 +145,7 @@ async def compress_video_file(input_path, output_path, bot, chat_id, preset='ult
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         process.communicate()
     except Exception as e:
-        raise RuntimeError(f"Error compressing media: {e}")
-        
-        
+        raise RuntimeError(f"Error compressing media: {e}")        
 
 # Function to unzip files
 def unzip_file(file_path, extract_path):

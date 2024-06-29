@@ -527,15 +527,6 @@ async def rename_file(bot, msg: Message):
     await sts.delete()
 
 #MultiTask Command 
-import os
-import time
-from pyrogram import Client, filters
-from pyrogram.types import Message
-from helpers import progress_message, humanbytes, change_video_metadata  # Assuming these helpers are defined elsewhere
-
-MULTITASK_ENABLED = True  # Set this as needed
-DOWNLOAD_LOCATION = "/path/to/download/location"  # Set your download location
-
 @Client.on_message(filters.private & filters.command("multitask"))
 async def multitask_command(bot, msg: Message):
     if not MULTITASK_ENABLED:

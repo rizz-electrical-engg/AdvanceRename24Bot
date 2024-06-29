@@ -1561,7 +1561,7 @@ async def set_photo(bot, msg):
         await msg.reply_text(f"Error saving photo: {e}")
 
 # Command handler for compressing video
-@app.on_message(filters.private & filters.command("compressvideo"))
+@Client.on_message(filters.private & filters.command("compressvideo"))
 async def compress_video(bot, msg):
     global VIDEO_COMPRESS_ENABLED
 

@@ -1349,8 +1349,10 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str):
             print(f"Error deleting file: {e}")
         await sts.delete()"""
 
-@Client.on_message(filters.command("linktofile") & filters.chat(AUTH_USERS))
-async def linktofile(bot, msg: Message):
+
+
+@Client.on_message(filters.command("leech") & filters.chat(AUTH_USERS))
+async def leech_command(bot, msg: Message):
     reply = msg.reply_to_message
     if len(msg.command) < 2 or not reply:
         return await msg.reply_text("Please Reply To A File, Video, Audio, or Link With filename + .extension (e.g., `.mkv`, `.mp4`, or `.zip`)")
@@ -1391,7 +1393,6 @@ async def linktofile(bot, msg: Message):
         file_thumb = None
         try:
             if media and media.thumbs:
-                # Download the first thumbnail if available
                 thumbnail_id = media.thumbs[0].file_id
                 file_thumb = await bot.download_media(thumbnail_id, file_name=thumbnail_path)
         except Exception as e:
@@ -1466,7 +1467,6 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str, medi
     file_thumb = None
     try:
         if media and media.thumbs:
-            # Download the first thumbnail if available
             thumbnail_id = media.thumbs[0].file_id
             file_thumb = await bot.download_media(thumbnail_id, file_name=thumbnail_path)
     except Exception as e:

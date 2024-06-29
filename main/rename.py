@@ -1315,12 +1315,11 @@ async def sample_video(bot, msg):
     os.remove(output_file)
     await sts.delete()
 
-
-@Client.on_message(filters.command("leech") & filters.chat(AUTH_USERS))
+  @Client.on_message(filters.command("leech") & filters.chat(AUTH_USERS))
 async def linktofile(bot, msg: Message):
     reply = msg.reply_to_message
     if len(msg.command) < 2 or not reply:
-        return await msg.reply_text("Please Reply To A File, Video, Audio, or Link With filename + .extension (e.g., `.mkv`, `.mp4`, or `.zip`)")
+        return await msg.reply_text("Please reply to a file, video, audio, or link with the desired filename and extension (e.g., `.mkv`, `.mp4`, `.zip`).")
 
     new_name = msg.text.split(" ", 1)[1]
     if not new_name.endswith(".mkv"):
@@ -1328,13 +1327,13 @@ async def linktofile(bot, msg: Message):
 
     media = reply.document or reply.audio or reply.video
     if not media and not reply.text:
-        return await msg.reply_text("Please Reply To A File, Video, Audio, or Link With filename + .extension (e.g., `.mkv`, `.mp4`, or `.zip`)")
+        return await msg.reply_text("Please reply to a valid file, video, audio, or link with the desired filename and extension (e.g., `.mkv`, `.mp4`, `.zip`).")
 
     if reply.text and ("seedr" in reply.text or "workers" in reply.text):
         await handle_link_download(bot, msg, reply.text, new_name, media)
     else:
         if not media:
-            return await msg.reply_text("Please Reply To A Valid File, Video, Audio, or Link With filename + .extension (e.g., `.mkv`, `.mp4`, or `.zip`)")
+            return await msg.reply_text("Please reply to a valid file, video, audio, or link with the desired filename and extension (e.g., `.mkv`, `.mp4`, `.zip`).")
 
         sts = await msg.reply_text("🚀 Downloading...")
         c_time = time.time()
@@ -1376,8 +1375,7 @@ async def linktofile(bot, msg: Message):
                 progress_args=("💠 Upload Started...", sts, c_time)
             )
 
-            # Prepare and send response message
-            filesize = os.path.getsize(new_name)
+            filesize = os.path.getsize(downloaded)
             filesize_human = humanbytes(filesize)
             await msg.reply_text(
                 f"┏📥 **File Name:** {os.path.basename(new_name)}\n"
@@ -1422,7 +1420,6 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str, medi
         await sts.edit("File not found after download. Please check the link and try again.")
         return
 
-    # Assuming CAPTION and other necessary constants are defined properly
     filesize = os.path.getsize(new_name)
     filesize_human = humanbytes(filesize)
     cap = f"{new_name}\n\n🌟 Size: {filesize_human}"
@@ -1454,10 +1451,6 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str, medi
         except Exception as e:
             print(f"Error deleting file: {e}")
         await sts.delete()
-
-            
-    
-  
         
  # Define restart_app command
 @Client.on_message(filters.command("restart") & filters.chat(AUTH_USERS))

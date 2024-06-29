@@ -525,99 +525,8 @@ async def rename_file(bot, msg: Message):
         pass
 
     await sts.delete()
-"""
+
 #MultiTask Command 
-@Client.on_message(filters.private & filters.command("multitask"))
-async def multitask_command(bot, msg):
-    global MULTITASK_ENABLED
-
-    if not MULTITASK_ENABLED:
-        return await msg.reply_text("The multitask feature is currently disabled.")
-
-    if len(msg.command) < 2:
-        return await msg.reply_text("Please provide the required arguments\nFormat: `/multitask -m video_title | audio_title | subtitle_title -n new_filename.mkv`")
-
-    command_text = " ".join(msg.command[1:]).strip()
-    metadata = []
-    new_filename = None
-
-    if "-m" in command_text:
-        metadata_part = command_text.split('-m')[1].split('-n')[0].strip()
-        if '|' in metadata_part:
-            metadata = list(map(str.strip, metadata_part.split('|')))
-
-    if "-n" in command_text:
-        try:
-            new_filename_part = command_text.split('-n')[1].strip()
-            if new_filename_part.lower().endswith(('.mkv', '.mp4', '.avi')):
-                new_filename = new_filename_part
-            else:
-                raise ValueError("Invalid file extension. Please use a valid video file extension (e.g., .mkv, .mp4, .avi).")
-        except IndexError:
-            return await msg.reply_text("Please provide a valid filename with the -n option (e.g., `-n new_filename.mkv`).")
-        except ValueError as ve:
-            return await msg.reply_text(str(ve))
-
-    if not metadata or not new_filename:
-        return await msg.reply_text("Please provide all necessary arguments.\nFormat: `/multitask -m video_title | audio_title | subtitle_title -n new_filename.mkv`")
-
-    reply = msg.reply_to_message
-    if not reply:
-        return await msg.reply_text("Please reply to a media file with the multitask command.")
-
-    media = reply.document or reply.audio or reply.video
-    if not media:
-        return await msg.reply_text("Please reply to a valid media file (audio, video, or document) with the multitask command.")
-
-    sts = await msg.reply_text("🚀 Downloading media... ⚡")
-    try:
-        downloaded = await reply.download()
-    except Exception as e:
-        await sts.edit(f"Error downloading media: {e}")
-        return
-
-    video_title, audio_title, subtitle_title = metadata
-
-    thumbnail_path = f"{DOWNLOAD_LOCATION}/thumbnail_{msg.from_user.id}.jpg"
-    og_thumbnail = None
-    if os.path.exists(thumbnail_path):
-        og_thumbnail = thumbnail_path
-    else:
-        try:
-            og_thumbnail = await bot.download_media(media.thumbs[0].file_id, file_name=thumbnail_path)
-        except Exception as e:
-            await sts.edit(f"Error downloading thumbnail: {e}")
-            og_thumbnail = None
-
-    await sts.edit("💠 Changing metadata... ⚡")
-    try:
-        change_video_metadata(downloaded, video_title, audio_title, subtitle_title, new_filename)
-    except Exception as e:
-        await sts.edit(f"Error changing metadata: {e}")
-        os.remove(downloaded)
-        return
-
-    filesize = os.path.getsize(new_filename)
-    filesize_human = humanbytes(filesize)
-
-    await sts.edit("💠 Uploading cleaned file... ⚡")
-    try:
-        await bot.send_document(msg.from_user.id, document=new_filename, thumb=og_thumbnail, caption=new_filename)
-        await msg.reply_text(
-            f"┏📥 **File Name:** {new_filename}\n"
-            f"┠💾 **Size:** {filesize_human}\n"
-            f"┠♻️ **Mode:** Multitask\n"
-            f"┗🚹 **Request User:** {msg.from_user.mention}\n\n"
-            f"❄**File has been sent to Bot PM!**"
-        )
-    except Exception as e:
-        await sts.edit(f"Error uploading cleaned file: {e}")
-    finally:
-        os.remove(downloaded)
-        if og_thumbnail and os.path.exists(og_thumbnail):
-            os.remove(og_thumbnail)
-        await sts.delete()"""
-
 @Client.on_message(filters.private & filters.command("multitask"))
 async def multitask_command(bot, msg):
     global MULTITASK_ENABLED
@@ -872,75 +781,6 @@ async def change_metadata(bot, msg):
         os.remove(output_file)
         if file_thumb and os.path.exists(file_thumb):
             os.remove(file_thumb)
-"""
-@Client.on_message(filters.private & filters.command("attachphoto"))
-async def attach_photo(bot, msg):
-    global PHOTO_ATTACH_ENABLED
-
-    if not PHOTO_ATTACH_ENABLED:
-        return await msg.reply_text("Photo attachment feature is currently disabled.")
-
-    reply = msg.reply_to_message
-    if not reply:
-        return await msg.reply_text("Please reply to a media file with the attach photo command and specify the output filename\nFormat: `attachphoto -n filename.mkv`")
-
-    if len(msg.command) < 2 or "-n" not in msg.text:
-        return await msg.reply_text("Please provide the output filename using the `-n` flag\nFormat: `attachphoto -n filename.mkv`")
-
-    command_text = " ".join(msg.command[1:]).strip()
-    filename_part = command_text.split('-n', 1)[1].strip()
-    output_filename = filename_part if filename_part else None
-
-    if not output_filename:
-        return await msg.reply_text("Please provide a valid filename\nFormat: `attachphoto -n filename.mkv`")
-
-    media = reply.document or reply.audio or reply.video
-    if not media:
-        return await msg.reply_text("Please reply to a valid media file (audio, video, or document) with the attach photo command.")
-
-    sts = await msg.reply_text("🚀 Downloading media... ⚡")
-    try:
-        downloaded = await reply.download()
-    except Exception as e:
-        await sts.edit(f"Error downloading media: {e}")
-        return
-
-    attachment_path = f"{DOWNLOAD_LOCATION}/attachment_{msg.from_user.id}.jpg"
-    if not os.path.exists(attachment_path):
-        await sts.edit("Please send a photo to be attached using the `setphoto` command.")
-        os.remove(downloaded)
-        return
-
-    output_file = os.path.join(DOWNLOAD_LOCATION, output_filename)
-
-    await sts.edit("💠 Adding photo attachment... ⚡")
-    try:
-        add_photo_attachment(downloaded, attachment_path, output_file)
-    except Exception as e:
-        await sts.edit(f"Error adding photo attachment: {e}")
-        os.remove(downloaded)
-        return
-
-    filesize = os.path.getsize(output_file)
-    filesize_human = humanbytes(filesize)
-
-    await sts.edit("🔼 Uploading modified file... ⚡")
-    try:
-        await bot.send_document(msg.from_user.id, output_file, caption=output_filename)
-        await msg.reply_text(
-            f"┏📥 **File Name:** {output_filename}\n"
-            f"┠💾 **Size:** {filesize_human}\n"
-            f"┠♻️ **Mode:** Attach Photo\n"
-            f"┗🚹 **Request User:** {msg.from_user.mention}\n\n"
-            f"❄**File have been Sent in Bot PM!**"
-            
-        )
-    except Exception as e:
-        await sts.edit(f"Error uploading modified file: {e}")
-    finally:
-        os.remove(downloaded)
-        os.remove(output_file)
-        await sts.delete()"""
 
 @Client.on_message(filters.private & filters.command("attachphoto"))
 async def attach_photo(bot, msg):
@@ -1167,8 +1007,11 @@ async def handle_media_files(bot, msg):
 # Function to merge and upload files
 async def merge_and_upload(bot, msg):
     user_id = msg.from_user.id
+    if user_id not in merge_state:
+        return await msg.reply_text("No merge state found for this user. Please start the merge process again.")
+
     files_to_merge = merge_state[user_id]["files"]
-    output_filename = merge_state[user_id]["output_filename"] or "merged_output.mp4"  # Default output filename
+    output_filename = merge_state[user_id].get("output_filename", "merged_output.mp4")  # Default output filename
     output_path = os.path.join(DOWNLOAD_LOCATION, output_filename)
 
     sts = await msg.reply_text("🚀 Starting merge process...")
@@ -1199,9 +1042,9 @@ async def merge_and_upload(bot, msg):
         if os.path.exists(thumbnail_path):
             file_thumb = thumbnail_path
         else:
-            # Logic to download the thumbnail if not provided
             try:
-                file_thumb = await bot.download_media(msg.thumbs[0].file_id, file_name=thumbnail_path)
+                if "thumbs" in msg and msg.thumbs:
+                    file_thumb = await bot.download_media(msg.thumbs[0].file_id, file_name=thumbnail_path)
             except Exception as e:
                 print(f"Error downloading thumbnail: {e}")
 
@@ -1242,7 +1085,8 @@ async def merge_and_upload(bot, msg):
             os.remove(file_thumb)
 
         # Clear merge state for the user
-        del merge_state[user_id]
+        if user_id in merge_state:
+            del merge_state[user_id]
 
         await sts.delete()
 
@@ -1288,16 +1132,15 @@ async def remove_tags(bot, msg):
     await sts.edit("💠 Removing all tags... ⚡")
     try:
         remove_all_tags(downloaded, cleaned_file)
-
     except Exception as e:
         await sts.edit(f"Error removing all tags: {e}")
         os.remove(downloaded)
         return
 
-    file_thumb = f"{DOWNLOAD_LOCATION}/thumbnail.jpg"
+    file_thumb = f"{DOWNLOAD_LOCATION}/thumbnail_{msg.from_user.id}.jpg"
     if not os.path.exists(file_thumb):
         try:
-            file_thumb = await bot.download_media(media.thumbs[0].file_id)
+            file_thumb = await bot.download_media(media.thumbs[0].file_id, file_name=file_thumb)
         except Exception as e:
             print(e)
             file_thumb = None
@@ -1322,9 +1165,9 @@ async def remove_tags(bot, msg):
             f"┠💾 **Size:** {filesize_human}\n"
             f"┠♻️ **Mode:** Remove Tags\n"
             f"┗🚹 **Request User:** {msg.from_user.mention}\n\n"
-            f"❄**File has been sent to your PM in the bot!**"            
+            f"❄**File has been sent to your PM in the bot!**"
         )
-        
+
         await sts.delete()
     except Exception as e:
         await sts.edit(f"Error uploading cleaned file: {e}")

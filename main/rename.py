@@ -1561,7 +1561,7 @@ async def set_photo(bot, msg):
         await msg.reply_text(f"Error saving photo: {e}")
 
 
-#Command handler for compressing video
+# Command handler for compressing video
 @Client.on_message(filters.private & filters.command("compressvideo"))
 async def compress_video(bot, msg):
     reply = msg.reply_to_message
@@ -1604,19 +1604,22 @@ async def compress_video(bot, msg):
 
     await sts.edit("🔼 Uploading compressed file... ⚡")
     try:
-        if reply.video:
-            await bot.send_video(msg.chat.id, output_file, caption=output_filename)
+        if os.path.exists(output_file):
+            if reply.video:
+                await bot.send_video(msg.chat.id, output_file, caption=output_filename)
+            else:
+                await bot.send_document(msg.chat.id, output_file, caption=output_filename)
+            await msg.reply_text("File compression and upload complete.")
         else:
-            await bot.send_document(msg.chat.id, output_file, caption=output_filename)
-        
-        await msg.reply_text("File compression and upload complete.")
+            await sts.edit(f"Error uploading compressed file: File {output_file} does not exist.")
     except Exception as e:
         await sts.edit(f"Error uploading compressed file: {e}")
     finally:
         # Clean up downloaded and temporary files
-        os.remove(downloaded_file)
-        os.remove(output_file)
-        await sts.delete()
+        os.remove(downloaded_file)  # Remove downloaded file
+        if os.path.exists(output_file):
+            os.remove(output_file)  # Remove output file if it exists
+        await sts.delete()  # Delete status message
 
 async def download_with_progress(bot, chat_id, status_message, reply_message):
     """
@@ -1626,8 +1629,7 @@ async def download_with_progress(bot, chat_id, status_message, reply_message):
         nonlocal download_progress_bar
         download_progress_bar.update(current - download_progress_bar.n)
         progress_percent = int((current / total) * 100)
-        if hasattr(status_message, 'message_id'):
-            await bot.edit_message_text(chat_id, status_message.message_id, f"🚀 Downloading media... ⚡ {progress_percent}%")
+        await bot.edit_message_text(chat_id, status_message.message_id, f"🚀 Downloading media... ⚡ {progress_percent}%")
 
     # Start downloading with progress bar
     download_progress_bar = tqdm(total=reply_message.document.file_size, unit='B', unit_scale=True)
@@ -1635,11 +1637,9 @@ async def download_with_progress(bot, chat_id, status_message, reply_message):
         file_path = await reply_message.download(progress=progress_callback)
     finally:
         download_progress_bar.close()
-        if hasattr(status_message, 'message_id'):
-            await bot.edit_message_text(chat_id, status_message.message_id, "🚀 Downloading media... ⚡ Complete")
+        await bot.edit_message_text(chat_id, status_message.message_id, "🚀 Downloading media... ⚡ Complete")
 
     return file_path
-
 
 
 if __name__ == '__main__':

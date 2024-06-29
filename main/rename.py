@@ -1349,7 +1349,6 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str):
             print(f"Error deleting file: {e}")
         await sts.delete()"""
 
-
 @Client.on_message(filters.command("linktofile") & filters.chat(AUTH_USERS))
 async def linktofile(bot, msg: Message):
     reply = msg.reply_to_message
@@ -1487,6 +1486,8 @@ async def handle_link_download(bot, msg: Message, link: str, new_name: str, medi
         except Exception as e:
             print(f"Error deleting file: {e}")
         await sts.delete()
+
+        
 
 
     

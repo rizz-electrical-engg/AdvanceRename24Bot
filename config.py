@@ -16,7 +16,7 @@ CAPTION = os.environ.get("CAPTION", "")
 #ALL FILES UPLOADED - CREDITS 🌟 - @Sunrises_24
 DOWNLOAD_LOCATION = "./DOWNLOADS"
 SUNRISES_PIC= "https://graph.org/file/5966e801852b2bba18afb.jpg"  # Replace with your Telegraph link
-AUTH_USERS = int(os.environ.get("AUTH_USERS", ''))
+AUTH_USERS = int(os.environ.get("AUTH_USERS", '5312287924'))
 
 
 
